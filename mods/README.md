@@ -1,5 +1,5 @@
 # Summary of MITgcm Changes for `slr_corr`
-
+The files in this directory and this summary are provided because these files undergo routine changes as MITgcm evolves. By implementing these changes manually, one can ensure that the version of MITgcm being used will accomodate the `slr_corr` package.
 
 ## PARAMS.h
 This file is inside the `model/inc` directory. Here, two lines are added for the `slr_corr` package. First `useSlr_corr` is defined as a LOGICAL and then put it in the namelist:
