@@ -3,8 +3,13 @@ This MITgcm package was designed to provide online adjustments to model runs suc
 
 ## Repository Overview
 This repository contains the following sub-directories:
+
 #### pkg
 The pkg directory contains all of the pertinent files required to compile MITgcm with `slr_corr`. These files should be placed in the pkg directory of MITgcm in a subdirectory titled `slr_corr`. For a complete description of the package, see the README file in the pkg directory.
+
+#### mods
+The mods directory contains all of the existing MITgcm src or inc files which were modified to implement the `slr_corr` package. A summary of the changes to each file has been added in the README so that similar changes can be implemented in various versions of MITgcm.
+
 #### verification
 The verification directory contains experiments that demonstrate the use of `slr_corr`. Instructions for compiling and running each experiment are provided in their respective READMEs.
 
