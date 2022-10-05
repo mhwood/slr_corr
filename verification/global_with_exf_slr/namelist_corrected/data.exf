@@ -1,0 +1,86 @@
+# *********************
+# External Forcing Data
+# *********************
+ &EXF_NML_01
+ exf_iprec         = 32,
+ exf_debugLev      = 3,
+ useExfCheckRange=.FALSE.
+ &
+
+# *********************
+ &EXF_NML_02
+ precipperiod       = -12.,
+ evapperiod       = -12.,
+ ustressperiod     = -12.,
+ vstressperiod     = -12.,
+#
+ climsststartdate1 = 19920101,
+ climsststartdate2 = 000000,
+ climsstperiod     = -12.,
+# 2 months restoring timescale for temperature
+ climsstTauRelax   = 5184000.,
+#
+#climsssstartdate1 = 19920101,
+#climsssstartdate2 = 000000,
+ climsssperiod     = -12.,
+# 6 months restoring timescale for salinity
+ climsssTauRelax   = 15552000.,
+#
+ precipfile = 'ecco_precip_slr.bin',
+ evapfile = 'ecco_evap.bin',
+ ustressfile  = 'trenberth_taux.bin',
+ vstressfile  = 'trenberth_tauy.bin',
+ climsstfile  = 'lev_sst.bin',
+ climsssfile  = 'lev_sss.bin',
+#
+ &
+
+# *********************
+ &EXF_NML_03
+ &
+
+# *********************
+ &EXF_NML_04
+ precip_lon0    = 2.,
+ precip_lon_inc = 4.,
+ precip_lat0    = -78.,
+ precip_lat_inc = 39*4.,
+ precip_nlon    = 90,
+ precip_nlat    = 40,
+#
+ evap_lon0    = 2.,
+ evap_lon_inc = 4.,
+ evap_lat0    = -78.,
+ evap_lat_inc = 39*4.,
+ evap_nlon    = 90,
+ evap_nlat    = 40,
+#
+ ustress_lon0    = 0.,
+ ustress_lon_inc = 4.,
+ ustress_lat0    = -78.,
+ ustress_lat_inc = 39*4.,
+ ustress_nlon    = 90,
+ ustress_nlat    = 40,
+#
+ vstress_lon0    = 2.,
+ vstress_lon_inc = 4.,
+ vstress_lat0    = -80.,
+ vstress_lat_inc = 39*4.,
+ vstress_nlon    = 90,
+ vstress_nlat    = 40,
+#
+ climsst_lon0    = 2.,
+ climsst_lon_inc = 4.,
+ climsst_lat0    = -78.,
+ climsst_lat_inc = 39*4.,
+ climsst_nlon    = 90,
+ climsst_nlat    = 40,
+#
+ climsss_lon0    = 2.,
+ climsss_lon_inc = 4.,
+ climsss_lat0    = -78.,
+ climsss_lat_inc = 39*4.,
+ climsss_nlon    = 90,
+ climsss_nlat    = 40,
+#
+ &
