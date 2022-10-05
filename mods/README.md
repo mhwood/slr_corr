@@ -1,6 +1,8 @@
-### Summary of MITgcm Changes for `slr_corr` (
+# Summary of MITgcm Changes for `slr_corr`
 
-1. `PARAMS.h`: This file is inside the `model/inc` directory. Here, two lines are added for the `slr_corr` package. First `useSlr_corr` is defined as a LOGICAL and then put it in the namelist:
+
+## PARAMS.h
+This file is inside the `model/inc` directory. Here, two lines are added for the `slr_corr` package. First `useSlr_corr` is defined as a LOGICAL and then put it in the namelist:
 ```
 1075      LOGICAL useSlr_corr                             
 ```
@@ -9,7 +11,8 @@ and
 1089     &        useRunClock, useEMBED_FILES, useSlr_corr,           
 ```
 
-2. `packages_boot.F`: This file is inside the `model/src` directory. For this file, the `slr_corr` package is added in the same location where the `RunClock` package is included. This occurs in three places:
+## packages_boot.F
+This file is inside the `model/src` directory. For this file, the `slr_corr` package is added in the same location where the `RunClock` package is included. This occurs in three places:
 ```
 95     &          useSlr_corr,        
 ```
@@ -24,7 +27,8 @@ and
 408 #endif
 ```
 
-3. `packages_init_fixed.F`: This file is inside the `model/src` directory. For this file, the `slr_corr` package is added near the end of the file before the default `ALLOW_MYPACKAGE` block:
+## packages_init_fixed.F
+This file is inside the `model/src` directory. For this file, the `slr_corr` package is added near the end of the file before the default `ALLOW_MYPACKAGE` block:
 ```
 622 #ifdef ALLOW_SLR_CORR
 623       IF (useSlr_corr) THEN
@@ -36,7 +40,8 @@ and
 629 #endif
 ```
 
-4. `packages_readparms.F`: This file is inside the `model/src` directory. For this file, the `slr_corr` package is added after the block for the `diagnostics` package:
+## packages_readparms.F
+This file is inside the `model/src` directory. For this file, the `slr_corr` package is added after the block for the `diagnostics` package:
 ```
 363 #ifdef ALLOW_SLR_CORR
 364 C--   if useSlr_corr=T, set slr_corr choices
@@ -45,7 +50,8 @@ and
 367 #endif /* ALLOW_SLR_CORR */
 ```
 
-5. `packages_init_variables.F`: This file is inside the `model/src` directory. For this file, the `slr_corr` package is added before the default `ALLOW_MYPACKAGE` block:
+## packages_init_variables.F
+This file is inside the `model/src` directory. For this file, the `slr_corr` package is added before the default `ALLOW_MYPACKAGE` block:
 ```
 472 #ifdef ALLOW_SLR_CORR
 473       IF ( useSlr_corr ) THEN
@@ -54,7 +60,8 @@ and
 476 #endif /* ALLOW_SLR_CORR */
 ```
 
-6. `exf_getffields.F`: This file is inside the `pkg/exf` directory. For this file, a line has been added after the precip fields are read:
+## exf_getffields.F
+This file is inside the `pkg/exf` directory. For this file, a line has been added after the precip fields are read:
 ```
 301       CALL SLR_CORR_ADJUST_PRECIP( myTime, myIter, myThid, precip)
 ```
