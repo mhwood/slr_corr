@@ -22,7 +22,7 @@ and
 ```
 and
 ```
-406 #ifdef ALLOW_EMBED_FILES                                         
+406 #ifdef ALLOW_SLR_CORR                                        
 407       CALL PACKAGES_PRINT_MSG( useSlr_corr,'SLR_CORR', ' ' ) 
 408 #endif
 ```
@@ -48,16 +48,6 @@ This file is inside the `model/src` directory. For this file, the `slr_corr` pac
 365 C      otherwise, just set pkgStatus=-1 and return
 366        IF (useSlr_corr) CALL SLR_CORR_READPARMS( myThid )
 367 #endif /* ALLOW_SLR_CORR */
-```
-
-## packages_init_variables.F
-This file is inside the `model/src` directory. For this file, the `slr_corr` package is added before the default `ALLOW_MYPACKAGE` block:
-```
-472 #ifdef ALLOW_SLR_CORR
-473       IF ( useSlr_corr ) THEN
-474         CALL SLR_CORR_INIT_VARIA( myThid )
-475       ENDIF
-476 #endif /* ALLOW_SLR_CORR */
 ```
 
 ## exf_getffields.F
