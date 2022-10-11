@@ -38,9 +38,9 @@ Once these changes have been made to the modified code files, the model can be b
 ```
 mkdir build
 cd build
-../../../tools/genmake2 -mpi -mods ../code -optfile ../../../tools/build_options/darwin_amd64_gfortran
+../../../../tools/genmake2 -mpi -mods ../code -optfile ../../../../tools/build_options/darwin_amd64_gfortran
 make depend
 make
 cd ..
-
+```
 
