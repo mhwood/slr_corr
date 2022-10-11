@@ -32,6 +32,9 @@ C     This is the time interval over which the running average is computed
       _RL slrc_balancePeriod
       _RL slrc_obs_start_time
 
+C     This is the precip adjustment, updated at each time step
+      _RL slrc_precip_adjustment
+
 C     These are some i/o parameters
       INTEGER slrc_filePrec
 
@@ -55,6 +58,7 @@ C------------------------------------------------------------------------------|
       COMMON /SLR_CORR_PARAM_R/
      & slrc_obs_period,
      & slrc_balancePeriod,
-     & slrc_obs_start_time
+     & slrc_obs_start_time,
+     & slrc_precip_adjustment
 
 #endif /* ALLOW_SLR_CORR */

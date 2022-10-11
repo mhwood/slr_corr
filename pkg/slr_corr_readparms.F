@@ -112,14 +112,14 @@ C     Close the open data file
       CLOSE(iUnit,STATUS='DELETE')
 #endif /* SINGLE_DISK_IO */
 
-       PRINT *, 'slrc_obs_filename',slrc_obs_filename
-       PRINT *, 'slrc_obs_startdate_1',slrc_obs_startdate_1
-       PRINT *, 'slrc_obs_startdate_2',slrc_obs_startdate_2
-       PRINT *, 'slrc_obs_period',slrc_obs_period
-       PRINT *, 'slrc_balancePeriod',slrc_balancePeriod
-       PRINT *, 'slrc_output_filename',slrc_output_filename
-       PRINT *, 'slrc_filePrec',slrc_filePrec
-       PRINT *, 'slrc_obs_start_time',slrc_obs_start_time
+C       PRINT *, 'slrc_obs_filename',slrc_obs_filename
+C       PRINT *, 'slrc_obs_startdate_1',slrc_obs_startdate_1
+C       PRINT *, 'slrc_obs_startdate_2',slrc_obs_startdate_2
+C       PRINT *, 'slrc_obs_period',slrc_obs_period
+C       PRINT *, 'slrc_balancePeriod',slrc_balancePeriod
+C       PRINT *, 'slrc_output_filename',slrc_output_filename
+C       PRINT *, 'slrc_filePrec',slrc_filePrec
+C       PRINT *, 'slrc_obs_start_time',slrc_obs_start_time
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Wrap up the code

@@ -58,10 +58,10 @@ C----&------------------------------------------------------------------xxxxxxx|
       _BEGIN_MASTER(myThid)
 
 C----&------------------------------------------------------------------xxxxxxx|
-C   Calculate the mean ETAN for adjustments to the precip field
+C   Enter init_varia code here
 C----&------------------------------------------------------------------xxxxxxx|
 
-      
+C   Currently nothing to do in this script - deltete if not necessary      
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Wrap up the code

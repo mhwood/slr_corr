@@ -50,7 +50,7 @@ C !MORE LOCAL VARIABLES:
       INTEGER iRec
       _RS     dummyRS(1)
       CHARACTER*(2) fType
-      INTEGER ioUnit, bi, bj
+      INTEGER ioUnit, bi, bj, i, n
       CHARACTER*(MAX_LEN_FNAM) fullName
     
       if (debug .eq. 1) then
@@ -80,29 +80,7 @@ C----&------------------------------------------------------------------xxxxxxx|
       CALL cal_ToSeconds ( slrc_difftime, slrc_obs_start_time, myThid )
       slrc_obs_start_time = startTime  + slrc_obs_start_time
 
-C      IF ( ( fld_startdate1.NE.0 .OR. fld_startdate2.NE.0 )
-C     &      .AND. fld_period.GT.0. ) THEN
-C-    Report inconsistent setting:
-C         IF ( fld_startdate1.NE.0 ) THEN
-C          WRITE(msgBuf,'(8A)') 'S/R EXF_GETFFIELD_START: ',
-C     &   'start-date for ', pkg_name, '-field "', fld_name,
-C     &   '" = ', fld_name, 'startdate1'
-C          CALL PRINT_ERROR( msgBuf, myThid )
-C         ENDIF
-C         IF ( fld_startdate2.NE.0 ) THEN
-C          WRITE(msgBuf,'(8A)') 'S/R EXF_GETFFIELD_START: ',
-C     &   'start-date for ', pkg_name, '-field "', fld_name,
-C     &   '" = ', fld_name, 'startdate2'
-C          CALL PRINT_ERROR( msgBuf, myThid )
-C         ENDIF
-C         WRITE(msgBuf,'(5A)') '    ',
-C     &   'is not allowed (in data.', pkg_name, ')',
-C     &   ' when pkg/cal is not used (useCAL=F)'
-C         CALL PRINT_ERROR( msgBuf, myThid )
-C         errCount = errCount + 1
-C        ENDIF
-
-       PRINT *, 'slrc_obs_start_time',slrc_obs_start_time
+C       PRINT *, 'slrc_obs_start_time',slrc_obs_start_time
 
 C----&------------------------------------------------------------------xxxxxxx|
 C   Read in the target ETAN timeseries (mean slr observations)
@@ -124,7 +102,21 @@ C----&------------------------------------------------------------------xxxxxxx|
       STOP 'ABNORMAL END: S/R READ_GLVEC_RL needs MDSIO pkg'
 #endif
 
-      PRINT *, 'slrc_obs_timeseries',slrc_obs_timeseries
+C      PRINT *, 'slrc_obs_timeseries',slrc_obs_timeseries
+
+      slrc_precip_adjustment = 0.0
+
+C----&------------------------------------------------------------------xxxxxxx|
+C   Fill in the arrays with zeros to avoid issues
+C----&------------------------------------------------------------------xxxxxxx|
+
+      DO i=1,nPx*nPy
+      procs_volume_above_zero(i) = 0
+      ENDDO
+
+      DO n=1,slrc_est_order+1
+      volumes_above_zero(n) = 0
+      ENDDO
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Wrap up the code

@@ -21,10 +21,10 @@ C     !USES:
       IMPLICIT NONE
 #include "SIZE.h"
 #include "EEPARAMS.h"
+#include "EESUPPORT.h"
 #include "PARAMS.h"
 #include "GRID.h"
 #include "DYNVARS.h"
-
 #include "EXF_FIELDS.h"
 
 #include "SLR_CORR_PARAM.h"
@@ -45,17 +45,16 @@ C     !LOCAL VARIABLES:
       _RL mean_EtaN_target
       INTEGER valid_pts
       INTEGER count0, count1
-      INTEGER i, j, bi, bj
+      INTEGER i, j, bi, bj, n
       _RL volume_above_zero_target
       _RL volume_above_zero
       _RL volume_above_zero_difference
       _RL precip_volume_flux
       _RL evap_volume_flux
       _RL wet_area
+      _RL next_volume_above_zero
       _RL precip_adjustment
-
-C     TMP LOCAL VARS FOR NOW TO CALL THE MON FUNCTION FOR ETA MEAN
-      _RL theMin, theMax, theMean, theSD, theDel2, theVol
+      _RL alpha
 
 CEOP
 C----&------------------------------------------------------------------xxxxxxx|
@@ -83,64 +82,58 @@ C----&------------------------------------------------------------------xxxxxxx|
       _BEGIN_MASTER(myThid)
 
 C----&------------------------------------------------------------------xxxxxxx|
-C   Calculate the mean etan target
+C   Calculate the mean EtaN target from provided observations
 C----&------------------------------------------------------------------xxxxxxx|
 
-C     Approach for now is to average available points in the future
-C     Sort of like a forward difference
-C     Should consider centered or backward averaging later
-
-C     First get the lower and upper bound steps in the obs model
+C     First get the lower and upper bound steps in the obs
+C     timeseries
       max_obs_time = slrc_obs_period*slrc_n_obs
       count0=1
       count1=slrc_n_obs
       DO i=1,slrc_n_obs
          if (
-     &   (myTime.ge.slrc_obs_start_time+(i-1)*slrc_obs_period)
+     &   ((myTime+deltaT) .ge. 
+     &     slrc_obs_start_time+(i-1)*slrc_obs_period)
      &   .and.(i.ge.count0)) then
          count0 = i
          endif
       ENDDO
       count1 = count0 +1
 
-C     Next get the number of steps which are used for the smoothing
-      n_average_points = CEILING(slrc_balancePeriod/slrc_obs_period)
-
-C     Now, find the mean EtaN in the average period
+C     Now, interpolate to get the target EtaN
 C     This will be the target EtaN to adjust the precip toward
-      mean_EtaN_target = 0.0
-      valid_pts = 0
-      DO i=1,n_average_points
-            if ((count0+i-1).le.slrc_n_obs) then
-              mean_EtaN_target = mean_EtaN_target
-     &                         + slrc_obs_timeseries(count0+i-1)
-              valid_pts = valid_pts +1
-            endif
-      ENDDO
-      mean_EtaN_target = mean_EtaN_target/valid_pts
-C      mean_EtaN_target = slrc_obs_timeseries(count0+i-1)
+C     i.e. the EtaN of the NEXT time step
+C     (This should be fixed later to actually interpolate)
+C     y(t) = (1-a) * y(t0) + a * y(t1)
+C     a = (t-t0)/(t1-t0)
+      alpha = (myTime+deltaT
+     &       -(slrc_obs_start_time+(count0-1)*slrc_obs_period))
+     &       /  (slrc_obs_period)
+      mean_EtaN_target = (1-alpha) * slrc_obs_timeseries(count0) 
+     &                   + alpha * slrc_obs_timeseries(count1)
 
-      PRINT *, 'slrc_obs_timeseries',slrc_obs_timeseries
-      PRINT *, 'myTime', myTime
-      PRINT *, 'lTime',slrc_obs_start_time+(count0-1)*slrc_obs_period
-      PRINT *, 'uTime',slrc_obs_start_time+(count1-1)*slrc_obs_period
-      PRINT *, 'count0',count0
-      PRINT *, 'count1',count1
-      PRINT *, 'n_average_points',n_average_points
-      PRINT *, 'mean_EtaN_target',mean_EtaN_target
+C      PRINT *, 'slrc_obs_timeseries',slrc_obs_timeseries
+C      PRINT *, 'myTime', myTime
+C      PRINT *, 'lTime',slrc_obs_start_time+(count0-1)*slrc_obs_period
+C      PRINT *, 'uTime',slrc_obs_start_time+(count1-1)*slrc_obs_period
+C      PRINT *, 'count0',count0
+C      PRINT *, 'count1',count1
+C      PRINT *, 'alpha', alpha
+C      PRINT *, 'lEtaN',slrc_obs_timeseries(count0)
+C      PRINT *, 'uEtaN',slrc_obs_timeseries(count1)
+C      PRINT *, 'mean_EtaN_target',mean_EtaN_target
 
 C----&------------------------------------------------------------------xxxxxxx|
-C     Calculate the volume flux deficit
+C     Calculate the volume flux deficit/excess
 C----&------------------------------------------------------------------xxxxxxx|
 
-C     This is all done in only 1 proc
-C     Need to update this to do exchanges for use in MPI
-
-C     Get the volume above 0
       volume_above_zero = 0.0
       precip_volume_flux = 0.0
       evap_volume_flux = 0.0
       wet_area = 0.0
+
+#ifndef ALLOW_USE_MPI
+C     Without MPI, we can just calculate these values with what we know
       DO bi=1,nSx
       DO bj=1,nSy
       DO i=1,sNx
@@ -156,41 +149,115 @@ C     Get the volume above 0
       ENDDO
       ENDDO
       ENDDO
+#else
+C     When using MPI, proc 0 keeps track of everyone's values
+      CALL SEND_FLUXES_TO_PROC_0(myThid)
+
+C      PRINT *,'procs_volume_above_zero',procs_volume_above_zero
+C      PRINT *,'procs_precip_volume_flux',procs_precip_volume_flux
+C      PRINT *,'procs_evap_volume_flux',procs_evap_volume_flux
+C      PRINT *,'procs_wet_area',procs_wet_area
+
+      DO i=1,nPx*nPy
+            volume_above_zero = volume_above_zero
+     &       + procs_volume_above_zero(i)
+            precip_volume_flux = precip_volume_flux
+     &       + procs_precip_volume_flux(i)
+            evap_volume_flux = evap_volume_flux
+     &       + procs_evap_volume_flux(i)
+            wet_area = wet_area + procs_wet_area(i)
+      ENDDO
+#endif
 
       volume_above_zero_target = mean_EtaN_target*wet_area
+C      print *, 'volume_above_zero_target', volume_above_zero_target
+
+C----&------------------------------------------------------------------xxxxxxx|
+C     Estimate what the next volume above 0 will be based on the past 
+C     values few values of the simulation
+C----&------------------------------------------------------------------xxxxxxx|
+
+C     Here, we will estimate V at the next timestep (V(i+1))
+C     based on the current timestep (V(i)
+C     i.e. V(i+1) = V(i) + dV/dt(i) * deltaT
+C     dV/dt can be calculate with a backward difference or higher 
+C     order versions of this 
+
+      DO n=1,slrc_est_order
+      volumes_above_zero(n+1) = volumes_above_zero(n)
+      ENDDO
+      volumes_above_zero(1) = volume_above_zero
+
+      IF (myIter.eq.nIter0) then
+      DO n=1,slrc_est_order
+      volumes_above_zero(n+1) = volume_above_zero
+      ENDDO
+      ENDIF
+
+C     Linear approximation (backwards difference)
+      next_volume_above_zero = volume_above_zero
+     & + volumes_above_zero(1)-volumes_above_zero(2)
+
+C      PRINT *, 'next_volume_above_zero',next_volume_above_zero
+C      PRINT *, 'volumes_above_zero(1)',volumes_above_zero(1)
+C      PRINT *, 'volumes_above_zero(2)',volumes_above_zero(2)
+C      PRINT *, 'next/current',next_volume_above_zero/volume_above_zero
+
+C----&------------------------------------------------------------------xxxxxxx|
+C     Calculate the precip adjustment
+C----&------------------------------------------------------------------xxxxxxx|
 
 C     Calculate the precip adjustment (m3/s)
       precip_adjustment = 
-     & (volume_above_zero_target-volume_above_zero)/deltaT
+     & (volume_above_zero_target-next_volume_above_zero)/deltaT
      & - precip_volume_flux + evap_volume_flux
 
 C     Convert precip adjustment to a mean per area cell
       precip_adjustment = precip_adjustment/wet_area
 
-      PRINT *, 'wet_area',wet_area
-      PRINT *, 'precip_volume_flux',precip_volume_flux
-      PRINT *, 'evap_volume_flux',precip_volume_flux
-      PRINT *, 'volume_above_zero',volume_above_zero
-      PRINT *, 'volume_above_zero_target',volume_above_zero_target
-      PRINT *, 'precip_adjustment',precip_adjustment
-      PRINT *, 'deltaT',deltaT
+#ifndef ALLOW_USE_MPI
+      slrc_precip_adjustment = precip_adjustment
+#else
+C     With MPI, only proc 0 has added up all the precips from
+C     the other additions
+      if (mpiMyId.eq.0) then 
+      slrc_precip_adjustment = precip_adjustment
+      else
+      slrc_precip_adjustment = 0.0
+      endif
+#endif
+
+C      PRINT *, 'wet_area',wet_area
+C      PRINT *, 'precip_volume_flux',precip_volume_flux
+C      PRINT *, 'evap_volume_flux',evap_volume_flux
+C      PRINT *, 'volume_above_zero',volume_above_zero
+C      PRINT *, 'volume_above_zero_target',volume_above_zero_target
+C      PRINT *, 'precip_adjustment',precip_adjustment
+C      PRINT *, 'deltaT',deltaT
+
+C----&------------------------------------------------------------------xxxxxxx|
+C     Apply the precip adjustment to the precip grid
+C----&------------------------------------------------------------------xxxxxxx|
+
+#ifdef ALLOW_USE_MPI
+C     When using MPI, proc 0 has to send out the precip adjustment
+C     to everyone else before its applied
+      CALL SEND_ADJUSTMENT_TO_ALL_PROCS(myThid)
+#endif
+
+C      print *,'slrc_precip_adjustment',slrc_precip_adjustment
 
       DO bi=1,nSx
       DO bj=1,nSy
       DO i=1,sNx
       DO j=1,sNy
             precipArr(i,j,bi,bj) = precip(i,j,bi,bj)
-     C       + precip_adjustment * maskInC(i,j,bi,bj) 
+     &       + slrc_precip_adjustment * maskInC(i,j,bi,bj) 
       ENDDO 
       ENDDO
       ENDDO
       ENDDO
 
-C----&------------------------------------------------------------------xxxxxxx|
-C   Modify the precip field with new tendency
-C----&------------------------------------------------------------------xxxxxxx|
-
-C     Scale the precip to meet this volume flux
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Wrap up the code
@@ -221,3 +288,307 @@ C--   Everyone must wait for the parameters to be loaded
 CEOC
 C----&------------------------------------------------------------------xxxxxxx|
 C----&------------------------------------------------------------------xxxxxxx|
+
+
+
+
+
+
+
+
+
+
+
+#ifdef ALLOW_USE_MPI
+C----&------------------------------------------------------------------xxxxxxx|
+C----&------------------------------------------------------------------xxxxxxx|
+CBOP
+C !ROUTINE: SUBROUTINE SEND_FLUXES_TO_PROC_0
+
+C !INTERFACE:
+      SUBROUTINE SEND_FLUXES_TO_PROC_0(myThid)
+
+C     !DESCRIPTION:
+C     Sending surface fluxes from processes > 0 to master process 0 
+      IMPLICIT NONE
+#include "SIZE.h"
+#include "EEPARAMS.h"
+#include "EESUPPORT.h"
+#include "PARAMS.h"
+#include "GRID.h"
+#include "DYNVARS.h"
+#include "EXF_FIELDS.h"
+#include "SLR_CORR_PARAM.h"
+#include "SLR_CORR_FIELDS.h"
+
+C     !LOCAL VARIABLES:
+      INTEGER vec_id, myThid
+      INTEGER pid, status(MPI_STATUS_SIZE), ierror
+      CHARACTER*(MAX_LEN_MBUF) msgBuf
+      INTEGER, PARAMETER :: debug = 1
+      INTEGER i, j, bi, bj
+
+      _RL proc_volume_above_zero
+      _RL proc_precip_volume_flux
+      _RL proc_evap_volume_flux
+      _RL proc_wet_area
+
+      _RL vol_tmp
+      _RL precip_tmp
+      _RL evap_tmp
+      _RL area_tmp
+CEOP
+C----&------------------------------------------------------------------xxxxxxx|
+CBOC 
+
+C     /==================================================================\
+C     | Note: MPI_SEND params: data_to_send, send_count, send_type,      |
+C     |                        destination_ID, tag, comm, ierror         |
+C     \==================================================================/
+
+C     /==================================================================\
+C     | Note: MPI_RECV params: received_data, receive_count,             |
+C     |                        receive_type, sender_ID, tag, comm,       |
+C     |                        status, ierror                            |
+C     \==================================================================/
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "  BEGIN SEND_FLUXES_TO_PROC_0 DEBUG "
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
+
+      proc_volume_above_zero = 0.0
+      proc_precip_volume_flux = 0.0
+      proc_evap_volume_flux = 0.0
+      proc_wet_area = 0.0
+      DO bi=1,nSx
+      DO bj=1,nSy
+      DO i=1,sNx
+      DO j=1,sNy
+            proc_volume_above_zero = proc_volume_above_zero
+     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+            proc_precip_volume_flux = proc_precip_volume_flux
+     &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+            proc_evap_volume_flux = proc_evap_volume_flux
+     &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+            proc_wet_area = proc_wet_area
+     &        + rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+      ENDDO 
+      ENDDO
+      ENDDO
+      ENDDO
+
+      procs_volume_above_zero(mpiMyId+1) = proc_volume_above_zero
+      procs_precip_volume_flux(mpiMyId+1) = proc_precip_volume_flux
+      procs_evap_volume_flux(mpiMyId+1) = proc_evap_volume_flux
+      procs_wet_area(mpiMyId+1) = proc_wet_area
+
+
+C ---- Here all procs besides 0 send their volume sums to
+C      proc 0 in this order:
+C      1. volume above 0 (calculated from EtaN)
+C      2. precip volume flux
+C      3. eval volume flux
+C      4. wet_area
+      
+
+        IF (mpiMyId .gt. 0) then
+          if (debug .eq. 1) then
+          WRITE(msgBuf,'(A,I5,A)') 'mpiMyId = ',mpiMyId,
+     &     '>0  => Calling MPI_SEND'
+          CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+
+C      PRINT *,'proc_volume_above_zero',proc_volume_above_zero
+C      PRINT *,'proc_precip_volume_flux',proc_precip_volume_flux
+C      PRINT *,'proc_evap_volume_flux',proc_evap_volume_flux
+C      PRINT *,'proc_wet_area',proc_wet_area
+
+          endif
+          call MPI_SEND(proc_volume_above_zero,
+     &             1, MPI_DOUBLE, 0, 1, MPI_COMM_MODEL, ierror)
+          call MPI_SEND(proc_precip_volume_flux,
+     &             1, MPI_DOUBLE, 0, 2, MPI_COMM_MODEL, ierror)
+          call MPI_SEND(proc_evap_volume_flux,
+     &             1, MPI_DOUBLE, 0, 3, MPI_COMM_MODEL, ierror)
+          call MPI_SEND(proc_wet_area,
+     &             1, MPI_DOUBLE, 0, 4, MPI_COMM_MODEL, ierror)
+        ENDIF
+
+C ---- Here proc 0 receives the volume sums in this order:
+C      1. volume above 0 (calculated from EtaN)
+C      2. precip volume flux
+C      3. eval volume flux
+C      4. wet_area
+
+        IF (mpiMyId .eq. 0) then
+          if (debug .eq. 1) then
+          WRITE(msgBuf,'(A)')  'mpiMyId=0  => Calling MPI_RECV'
+          CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+          endif
+
+          DO pid=1, nPx*nPy-1
+
+              call MPI_RECV(vol_tmp, 1, MPI_DOUBLE,
+     &               pid, 1 ,MPI_COMM_MODEL, status, ierror)
+              call MPI_RECV(precip_tmp, 1, MPI_DOUBLE,
+     &               pid, 2 ,MPI_COMM_MODEL, status, ierror)
+              call MPI_RECV(evap_tmp, 1, MPI_DOUBLE,
+     &               pid, 3 ,MPI_COMM_MODEL, status, ierror)
+              call MPI_RECV(area_tmp, 1, MPI_DOUBLE,
+     &               pid, 4 ,MPI_COMM_MODEL, status, ierror)
+
+C            PRINT *, 'pid',pid
+C            PRINT *,  'vol_tmp', vol_tmp
+C            PRINT *,  'precip_tmp', precip_tmp
+C            PRINT *,  'evap_tmp', evap_tmp
+C            PRINT *,  'area_tmp', area_tmp
+
+      procs_volume_above_zero(pid+1) = vol_tmp
+      procs_precip_volume_flux(pid+1) = precip_tmp
+      procs_evap_volume_flux(pid+1) = evap_tmp
+      procs_wet_area(pid+1) = area_tmp
+
+          ENDDO
+         ENDIF
+
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "  END SEND_FLUXES_TO_PROC_0 DEBUG "
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
+
+
+       END
+
+CEOC
+C----&------------------------------------------------------------------xxxxxxx|
+C----&------------------------------------------------------------------xxxxxxx|
+#endif /* ALLOW_USE_MPI */
+
+
+
+#ifdef ALLOW_USE_MPI
+C----&------------------------------------------------------------------xxxxxxx|
+C----&------------------------------------------------------------------xxxxxxx|
+CBOP
+C !ROUTINE: SUBROUTINE SEND_ADJUSTMENT_TO_ALL_PROCS
+
+C !INTERFACE:
+      SUBROUTINE SEND_ADJUSTMENT_TO_ALL_PROCS(myThid)
+
+C     !DESCRIPTION:
+C     Sending precip adjustment from process 0 to all other processes
+      IMPLICIT NONE
+#include "SIZE.h"
+#include "EEPARAMS.h"
+#include "EESUPPORT.h"
+#include "PARAMS.h"
+#include "SLR_CORR_PARAM.h"
+#include "SLR_CORR_FIELDS.h"
+
+C     !LOCAL VARIABLES:
+      INTEGER vec_id, myThid
+      INTEGER pid, status(MPI_STATUS_SIZE), ierror
+      CHARACTER*(MAX_LEN_MBUF) msgBuf
+      INTEGER, PARAMETER :: debug = 1
+      INTEGER i, j, bi, bj
+
+      _RL adjustment_tmp
+CEOP
+C----&------------------------------------------------------------------xxxxxxx|
+CBOC 
+
+C     /==================================================================\
+C     | Note: MPI_SEND params: data_to_send, send_count, send_type,      |
+C     |                        destination_ID, tag, comm, ierror         |
+C     \==================================================================/
+
+C     /==================================================================\
+C     | Note: MPI_RECV params: received_data, receive_count,             |
+C     |                        receive_type, sender_ID, tag, comm,       |
+C     |                        status, ierror                            |
+C     \==================================================================/
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "  BEGIN SEND_ADJUSTMENT_TO_ALL_PROCS DEBUG "
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
+
+
+C ---- Here proc 0 sends the adjustment to all other procs
+
+        IF (mpiMyId .eq. 0) then
+          if (debug .eq. 1) then
+          WRITE(msgBuf,'(A,I5,A)') 'mpiMyId = ',mpiMyId,
+     &     '>0  => Calling MPI_SEND'
+          CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+          endif
+
+          DO pid=1, nPx*nPy-1
+          call MPI_SEND(slrc_precip_adjustment,
+     &             1, MPI_DOUBLE, pid, 1, MPI_COMM_MODEL, ierror)
+          ENDDO
+          
+        ENDIF
+
+C ---- Here all proc besides 0 receive the adjutment info
+
+        IF (mpiMyId .gt. 0) then
+          if (debug .eq. 1) then
+          WRITE(msgBuf,'(A)')  'mpiMyId=0  => Calling MPI_RECV'
+          CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+          endif
+
+
+          call MPI_RECV(adjustment_tmp, 1, MPI_DOUBLE,
+     &               0, 1 ,MPI_COMM_MODEL, status, ierror)
+
+         slrc_precip_adjustment = adjustment_tmp
+        ENDIF
+
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "  END SEND_ADJUSTMENT_TO_ALL_PROCS DEBUG "
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A)') "==========================================="
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
+
+
+       END
+
+CEOC
+C----&------------------------------------------------------------------xxxxxxx|
+C----&------------------------------------------------------------------xxxxxxx|
+#endif /* ALLOW_USE_MPI */
+
