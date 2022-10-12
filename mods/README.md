@@ -53,6 +53,10 @@ This file is inside the `model/src` directory. For this file, the `slr_corr` pac
 ## exf_getffields.F
 This file is inside the `pkg/exf` directory. For this file, a line has been added after the precip fields are read:
 ```
-301       CALL SLR_CORR_ADJUST_PRECIP( myTime, myIter, myThid, precip)
+301 #ifdef ALLOW_SLR_CORR
+302       IF (useSlr_corr) THEN
+303       CALL SLR_CORR_ADJUST_PRECIP( myTime, myIter, myThid, precip)
+304       ENDIF
+305 #endif
 ```
 This line will most likely need to be moved further down in the script to accomodate additional ctrl adjustments.
