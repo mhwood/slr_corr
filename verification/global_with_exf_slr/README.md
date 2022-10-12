@@ -1,11 +1,11 @@
 # global_with_exf_slr
 
-This verification experiment was designed to test the `slr_corr` package. The experiment contains two configurations - an "uncorrected" experiement which doesn't use the package, and a "correctd" experiement which uses package. In the "uncorrected" experiment, the model is run with a transient sea level rise trend which differents from the provided "observations". In the "corrected" experiment, the sea level rise signal is adjusted online with the `slr_corr` package so that the mean sea level is consistent with "observations".
+This verification experiment was designed to test the `slr_corr` package. The experiment contains two configurations - an "uncorrected" experiement which doesn't use the package, and a "corrected" experiement which uses package. In the "uncorrected" experiment, the model is run with a transient sea level rise trend which differs from the provided "observations". In the "corrected" experiment, the sea level rise signal is adjusted online with the `slr_corr` package so that the mean sea level is consistent with "observations".
 
-The instructions below provide step-by-step instructions to implement the experiments in a fresh clone of MITgcm. There are three main steps and one optional step:
+The instructions below provide step-by-step instructions to implement the experiments in a fresh clone of MITgcm. The instructions below outline how to:
 - Build the model with `slr_corr` in a fresh MITgcm clone
-- Run the "uncorrected" experiment
-- Run the "corrected" experiment
+- Run the "uncorrected" experiment (optional)
+- Run the "corrected" experiment using `slr_corr`
 - Create a comparison plot (optional)
 
 ## Building the model with `slr_corr` in a fresh MITgcm clone
@@ -38,10 +38,9 @@ cp ../../../pkg/exf/exf_getffields.F code
 ```
 Instructions for implementing the modifications to these files are provided on the [mods](https://github.com/mhwood/slr_corr/tree/main/mods) page.
 
-As a final step before builing, choose whether you would like to use mpi or not:
+As a final step before builing, choose whether you would like to use mpi or not. In this example, we will use mpi but the code will work without it (using 2 threads). To configure with mpi, use the SIZE.h file with 2 procs:
 ```
-cp code/SIZE.h_2_proc code/SIZE.h          # with mpi
-cp code/SIZE.h_no_mpi code/SIZE.h          # without mpi
+cp code/SIZE.h_2_proc code/SIZE.h
 ```
 
 Once these changes have been made to the modified code files, the model can be built. Building is OS-dependent but generally follows the following steps:
@@ -57,7 +56,7 @@ cd ..
 ## Running the "uncorrected" experiment
 Now that the model is built, the "uncorrected" experiment can be prepared and run. First, gather all of the pertinent files from the existing verification experiment:
 ```
-cp ../../../verification/tutorial_global_oce_latlon/input/*.bin data
+cp ../../../verification/tutorial_global_oce_latlon/input/*.bin input
 ```
 Note that the external forcing conditions from the `global_with_exf` experiment are not necessry to copy - these files are replaced with data provided with this experiment. Now, the model can be run for a 1 year (or longer) simulation:
 ```
@@ -70,4 +69,13 @@ mpirun -np 2 ./mitgcmuv
 ```
 
 
-
+## Running the "corrected" experiment
+The steps to run the "corrected" experiment are similar to the "uncorrected" experiment. If you did not run the "uncorrected" experiment, be sure to grab the input binaries from the tutorial as described above. Running the "corrected" experiement can be done with:
+```
+mkdir run_corrected
+cd run_corrected
+ln -s ../input/* .
+ln -s ../namelist_corrected/* .
+ln -s ../build/mitgcmuv .
+mpirun -np 2 ./mitgcmuv
+```
