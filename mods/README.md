@@ -1,4 +1,4 @@
-# Summary of MITgcm Changes for `slr_corr`
+# Summary of MITgcm modifications for `slr_corr`
 The files in this directory and this summary are provided because these files undergo routine changes as MITgcm evolves. By implementing these changes manually, one can ensure that the version of MITgcm being used will accomodate the `slr_corr` package and compile without error.
 
 ## PARAMS.h
