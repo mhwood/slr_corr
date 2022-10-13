@@ -29,7 +29,7 @@ C     !INPUT PARAMETERS:
 C     !LOCAL VARIABLES:
       CHARACTER*(MAX_LEN_MBUF) msgBuf
       INTEGER iUnit
-      INTEGER, PARAMETER :: debug = 1
+      INTEGER, PARAMETER :: debug = 0
 
 CEOP
 C----&------------------------------------------------------------------xxxxxxx|

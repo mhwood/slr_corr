@@ -29,7 +29,7 @@ C     !INPUT PARAMETERS:
 C     !LOCAL VARIABLES:
       CHARACTER*(MAX_LEN_MBUF) msgBuf
       INTEGER iUnit
-      INTEGER, PARAMETER :: debug = 1
+      INTEGER, PARAMETER :: debug = 0
 
 CEOP
 C----&------------------------------------------------------------------xxxxxxx|
@@ -101,8 +101,6 @@ C----&------------------------------------------------------------------xxxxxxx|
 #else
       STOP 'ABNORMAL END: S/R READ_GLVEC_RL needs MDSIO pkg'
 #endif
-
-C      PRINT *, 'slrc_obs_timeseries',slrc_obs_timeseries
 
       slrc_precip_adjustment = 0.0
 

@@ -101,11 +101,7 @@ C     timeseries
       count1 = count0 +1
 
 C     Now, interpolate to get the target EtaN
-C     This will be the target EtaN to adjust the precip toward
-C     i.e. the EtaN of the NEXT time step
-C     (This should be fixed later to actually interpolate)
-C     y(t) = (1-a) * y(t0) + a * y(t1)
-C     a = (t-t0)/(t1-t0)
+C     This is the target EtaN to adjust the precip toward
       alpha = (myTime+deltaT
      &       -(slrc_obs_start_time+(count0-1)*slrc_obs_period))
      &       /  (slrc_obs_period)
@@ -122,6 +118,27 @@ C      PRINT *, 'alpha', alpha
 C      PRINT *, 'lEtaN',slrc_obs_timeseries(count0)
 C      PRINT *, 'uEtaN',slrc_obs_timeseries(count1)
 C      PRINT *, 'mean_EtaN_target',mean_EtaN_target
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A,I10)') "  myIter ", myIter
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3)') "  myTime ", myTime
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,I5)') "  count0 ", count0
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,I5)') "  count1 ", count1
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3)') "  alpha ", alpha
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3)') "  mean_EtaN_target ", mean_EtaN_target
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Calculate the volume flux deficit/excess
@@ -170,33 +187,61 @@ C      PRINT *,'procs_wet_area',procs_wet_area
 #endif
 
       volume_above_zero_target = mean_EtaN_target*wet_area
-C      print *, 'volume_above_zero_target', volume_above_zero_target
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero", 
+     &                          volume_above_zero, " m^3"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero_target", 
+     &                          volume_above_zero_target, " m^3"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  precip_volume_flux", 
+     &                          precip_volume_flux, " m^3/s"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  evap_volume_flux", 
+     &                          evap_volume_flux, " m^3/s"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  wet_area", 
+     &                          wet_area, " m^3"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
 
 C----&------------------------------------------------------------------xxxxxxx|
-C     Estimate what the next volume above 0 will be based on the past 
-C     values few values of the simulation
+C     Estimate what the next volume above 0 will be
 C----&------------------------------------------------------------------xxxxxxx|
+
+C     Deactivated this section for now
+C     This idea is to estimate the next target volume based on the 
+C     past few values
+C     This code could be used for improvements later
 
 C     Here, we will estimate V at the next timestep (V(i+1))
-C     based on the current timestep (V(i)
+C     based on the current timestep (V(i))
 C     i.e. V(i+1) = V(i) + dV/dt(i) * deltaT
-C     dV/dt can be calculate with a backward difference or higher 
+C     dV/dt can be calculated with a backward difference or higher 
 C     order versions of this 
+C     the variable slrc_est_order is used to set the order of the approximation
+C     the default is set to 2 in SLR_CORR_SIZE (linear approximation)
 
-      DO n=1,slrc_est_order
-      volumes_above_zero(n+1) = volumes_above_zero(n)
-      ENDDO
-      volumes_above_zero(1) = volume_above_zero
+C      DO n=1,slrc_est_order
+C      volumes_above_zero(n+1) = volumes_above_zero(n)
+C      ENDDO
+C      volumes_above_zero(1) = volume_above_zero
 
-      IF (myIter.eq.nIter0) then
-      DO n=1,slrc_est_order
-      volumes_above_zero(n+1) = volume_above_zero
-      ENDDO
-      ENDIF
+C      IF (myIter.eq.nIter0) then
+C      DO n=1,slrc_est_order
+C      volumes_above_zero(n+1) = volume_above_zero
+C      ENDDO
+C      ENDIF
 
 C     Linear approximation (backwards difference)
-      next_volume_above_zero = volume_above_zero
-     & + volumes_above_zero(1)-volumes_above_zero(2)
+C      next_volume_above_zero = volume_above_zero
+C     & + volumes_above_zero(1)-volumes_above_zero(2)
 
 C      PRINT *, 'next_volume_above_zero',next_volume_above_zero
 C      PRINT *, 'volumes_above_zero(1)',volumes_above_zero(1)
@@ -209,8 +254,15 @@ C----&------------------------------------------------------------------xxxxxxx|
 
 C     Calculate the precip adjustment (m3/s)
       precip_adjustment = 
-     & (volume_above_zero_target-next_volume_above_zero)/deltaT
-     & - precip_volume_flux + evap_volume_flux
+     & (volume_above_zero_target-volume_above_zero)/deltaT
+C     & - precip_volume_flux + evap_volume_flux
+
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A,F20.3,A)') "  precip_adjustment", 
+     &                          precip_adjustment, " m^3/s"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
 
 C     Convert precip adjustment to a mean per area cell
       precip_adjustment = precip_adjustment/wet_area
@@ -227,13 +279,16 @@ C     the other additions
       endif
 #endif
 
-C      PRINT *, 'wet_area',wet_area
-C      PRINT *, 'precip_volume_flux',precip_volume_flux
-C      PRINT *, 'evap_volume_flux',evap_volume_flux
-C      PRINT *, 'volume_above_zero',volume_above_zero
-C      PRINT *, 'volume_above_zero_target',volume_above_zero_target
-C      PRINT *, 'precip_adjustment',precip_adjustment
-C      PRINT *, 'deltaT',deltaT
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A,F20.3,A)') "  precip_adjustment", 
+     &                          precip_adjustment, " m/s"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  deltaT", 
+     &                          deltaT, " s"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Apply the precip adjustment to the precip grid
@@ -325,7 +380,7 @@ C     !LOCAL VARIABLES:
       INTEGER vec_id, myThid
       INTEGER pid, status(MPI_STATUS_SIZE), ierror
       CHARACTER*(MAX_LEN_MBUF) msgBuf
-      INTEGER, PARAMETER :: debug = 1
+      INTEGER, PARAMETER :: debug = 0
       INTEGER i, j, bi, bj
 
       _RL proc_volume_above_zero
@@ -506,7 +561,7 @@ C     !LOCAL VARIABLES:
       INTEGER vec_id, myThid
       INTEGER pid, status(MPI_STATUS_SIZE), ierror
       CHARACTER*(MAX_LEN_MBUF) msgBuf
-      INTEGER, PARAMETER :: debug = 1
+      INTEGER, PARAMETER :: debug = 0
       INTEGER i, j, bi, bj
 
       _RL adjustment_tmp

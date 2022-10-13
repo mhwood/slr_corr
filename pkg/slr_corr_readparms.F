@@ -29,7 +29,7 @@ C     !INPUT PARAMETERS:
 C     !LOCAL VARIABLES:
       CHARACTER*(MAX_LEN_MBUF) msgBuf
       INTEGER iUnit
-      INTEGER, PARAMETER :: debug = 1
+      INTEGER, PARAMETER :: debug = 0
 
 CEOP
 C----&------------------------------------------------------------------xxxxxxx|
@@ -112,14 +112,35 @@ C     Close the open data file
       CLOSE(iUnit,STATUS='DELETE')
 #endif /* SINGLE_DISK_IO */
 
-C       PRINT *, 'slrc_obs_filename',slrc_obs_filename
-C       PRINT *, 'slrc_obs_startdate_1',slrc_obs_startdate_1
-C       PRINT *, 'slrc_obs_startdate_2',slrc_obs_startdate_2
-C       PRINT *, 'slrc_obs_period',slrc_obs_period
-C       PRINT *, 'slrc_balancePeriod',slrc_balancePeriod
-C       PRINT *, 'slrc_output_filename',slrc_output_filename
-C       PRINT *, 'slrc_filePrec',slrc_filePrec
-C       PRINT *, 'slrc_obs_start_time',slrc_obs_start_time
+      if (debug .eq. 1) then
+      WRITE(msgBuf,'(A,A)') "  slrc_obs_filename: ", slrc_obs_filename
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,I9)') "  slrc_obs_startdate_1: ",
+     &                       slrc_obs_startdate_1
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,I9)') "  slrc_obs_startdate_2: ",
+     &                       slrc_obs_startdate_2
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F10.3)') "  slrc_obs_period: ",
+     &                       slrc_obs_period
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F10.3)') "  slrc_balancePeriod: ",
+     &                       slrc_balancePeriod
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,A)') "  slrc_output_filename: ",
+     &                       slrc_output_filename
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F10.3)') "  slrc_obs_start_time: ",
+     &                       slrc_obs_start_time
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      endif
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Wrap up the code
