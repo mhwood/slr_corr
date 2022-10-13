@@ -58,7 +58,9 @@ Now that the model is built, the "uncorrected" experiment can be prepared and ru
 ```
 cp ../../../verification/tutorial_global_oce_latlon/input/*.bin input
 ```
-Note that the external forcing conditions from the `global_with_exf` experiment are not necessry to copy - these files are replaced with data provided with this experiment. Now, the model can be run for a 1 year (or longer) simulation:
+Note that the external forcing conditions from the `global_with_exf` experiment are not necessry to copy - these files are replaced with data provided with this experiment. In particular, the precipitation and evaporation fields were created using the mean seasonal cycle from ECCOv4r4 data with an added transient sea level induced by tuning the precipitation field.
+
+Now, the model can be run for a 1 year (or longer) simulation starting in 1992:
 ```
 mkdir run_uncorrected
 cd run_uncorrected
@@ -66,6 +68,7 @@ ln -s ../input/* .
 ln -s ../namelist_uncorrected/* .
 ln -s ../build/mitgcmuv .
 mpirun -np 2 ./mitgcmuv
+cd ..
 ```
 
 
@@ -78,4 +81,13 @@ ln -s ../input/* .
 ln -s ../namelist_corrected/* .
 ln -s ../build/mitgcmuv .
 mpirun -np 2 ./mitgcmuv
+cd ..
 ```
+
+## Plotting a comparison of mean sea level
+To plot the a comparison of the "uncorrected" and "corrected" model results along with the "observations", there is a convenient Python script provided in the `utils` directory:
+```
+cd utils
+python3 plot_mean_EtaN_comparison.py -d ../
+```
+This script will generate the plot shown on the front page of this repo.
