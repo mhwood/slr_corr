@@ -85,7 +85,7 @@ cd ..
 ```
 
 ## Plotting a comparison of mean sea level
-To plot the a comparison of the "uncorrected" and "corrected" model results along with the "observations", there is a convenient Python script provided in the `utils` directory:
+To plot a comparison of the "uncorrected" and "corrected" model results along with the "observations", there is a convenient Python script provided in the `utils` directory:
 ```
 cd utils
 python3 plot_mean_EtaN_comparison.py -d ../
