@@ -13,6 +13,8 @@
  evapperiod       = -12.,
  ustressperiod     = -12.,
  vstressperiod     = -12.,
+ hfluxperiod       = -12.,
+ sfluxperiod       = -12.,
 #
  climsststartdate1 = 19920101,
  climsststartdate2 = 000000,

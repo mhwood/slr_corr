@@ -9,10 +9,12 @@
 
 # *********************
  &EXF_NML_02
- precipperiod       = -12.,
- evapperiod       = -12.,
+ precipperiod      = -12.,
+ evapperiod        = -12.,
  ustressperiod     = -12.,
  vstressperiod     = -12.,
+ hfluxperiod       = -12.,
+ sfluxperiod       = -12.,
 #
  climsststartdate1 = 19920101,
  climsststartdate2 = 000000,
@@ -26,8 +28,8 @@
 # 6 months restoring timescale for salinity
  climsssTauRelax   = 15552000.,
 #
- precipfile = 'ecco_precip_slr.bin',
- evapfile = 'ecco_evap.bin',
+ precipfile   = 'ecco_precip_slr.bin',
+ evapfile     = 'ecco_evap.bin',
  ustressfile  = 'trenberth_taux.bin',
  vstressfile  = 'trenberth_tauy.bin',
  climsstfile  = 'lev_sst.bin',
@@ -41,19 +43,19 @@
 
 # *********************
  &EXF_NML_04
- precip_lon0    = 2.,
- precip_lon_inc = 4.,
- precip_lat0    = -78.,
- precip_lat_inc = 39*4.,
- precip_nlon    = 90,
- precip_nlat    = 40,
+ precip_lon0     = 2.,
+ precip_lon_inc  = 4.,
+ precip_lat0     = -78.,
+ precip_lat_inc  = 39*4.,
+ precip_nlon     = 90,
+ precip_nlat     = 40,
 #
- evap_lon0    = 2.,
- evap_lon_inc = 4.,
- evap_lat0    = -78.,
- evap_lat_inc = 39*4.,
- evap_nlon    = 90,
- evap_nlat    = 40,
+ evap_lon0       = 2.,
+ evap_lon_inc    = 4.,
+ evap_lat0       = -78.,
+ evap_lat_inc    = 39*4.,
+ evap_nlon       = 90,
+ evap_nlat       = 40,
 #
  ustress_lon0    = 0.,
  ustress_lon_inc = 4.,

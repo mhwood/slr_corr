@@ -6,12 +6,9 @@ import matplotlib.pyplot as plt
 import argparse
 from datetime import datetime, timedelta
 
-def read_etan_field(run_dir,spinup=False,n_proc=2):
+def read_etan_field(run_dir,n_proc=2):
 
-    if spinup:
-        timestep = '00000'
-    else:
-        timestep = '14600'
+    timestep = '14610'
 
     if n_proc ==1:
         file_1 = run_dir + '/mnc_0001/diagSurf.00000'+timestep+'.t001.nc'
@@ -123,21 +120,21 @@ def calculate_EtaN_timeseries(EtaN,area_grid, mask_grid, start_dec_yr):
 
 def read_observation_timeseries(config_dir,start_dec_yr):
 
-    obs = np.fromfile(config_dir+'/data/slr_observations.bin','>f4')
+    obs = np.fromfile(config_dir+'/input/slr_observations.bin','>f4')
     time = np.arange(len(obs))*(1/365.25)+start_dec_yr
     observation_timeseries = np.column_stack([time,obs])
 
     return(observation_timeseries)
 
 def plot_EtaN_timeseries(config_dir,observation_timeseries,EtaN_slr_uncorrected_timeseries,
-                         EtaN_slr_corrected_timeseries,EtaN_slr_spinup):
+                         EtaN_slr_corrected_timeseries):
 
     fig = plt.figure(figsize=(9,4))
 
     # plt.plot(EtaN_slr_spinup[:, 0], EtaN_slr_spinup[:, 1], label='spinup')
     plt.plot(EtaN_slr_uncorrected_timeseries[:,0],EtaN_slr_uncorrected_timeseries[:,1],label='Without slr_corr')
-    plt.plot(observation_timeseries[:, 0], observation_timeseries[:, 1], label='"Observations"', alpha=0.4)
-    plt.plot(EtaN_slr_corrected_timeseries[:, 0], EtaN_slr_corrected_timeseries[:, 1], label='With slr_corr',linewidth=2)
+    plt.plot(observation_timeseries[:, 0], observation_timeseries[:, 1], label='"Observations"', alpha=0.4,linewidth=4)
+    plt.plot(EtaN_slr_corrected_timeseries[:, 0], EtaN_slr_corrected_timeseries[:, 1],'--', label='With slr_corr',linewidth=2)
 
 
     plt.legend(ncol=3)
@@ -151,8 +148,8 @@ def plot_EtaN_timeseries(config_dir,observation_timeseries,EtaN_slr_uncorrected_
 
     plt.ylabel('Mean EtaN (m)')
 
-    # plt.gca().set_xlim([1985,2003])
-    # plt.gca().set_ylim([-0.14, -0.1])
+    plt.gca().set_xlim([1991.9,1993.1])
+    plt.gca().set_ylim([-0.0002, 0.0005])
 
     plt.grid(linestyle='--',alpha=0.4)
 
@@ -163,33 +160,22 @@ def plot_EtaN_timeseries(config_dir,observation_timeseries,EtaN_slr_uncorrected_
 
 def plot_etan_comparison(config_dir):
 
-    # model_2 = 'precip_balanced'
-    # run_dir = config_dir + '/run_' + model_2
-    # XC, YC, EtaN_precip_balanced = read_etan_field(run_dir)
-    # EtaN_precip_balanced_timeseries = calculate_EtaN_timeseries(EtaN_precip_balanced)
-
-    model_1 = 'slr_uncorrected'
+    model_1 = 'uncorrected'
     run_dir = config_dir + '/run_' + model_1
-    XC, YC, EtaN_slr_uncorrected, area_grid, mask_grid = read_etan_field(run_dir,n_proc=1)
-    start_dec_yr = 1991 + (361 / 365.0)
+    XC, YC, EtaN_slr_uncorrected, area_grid, mask_grid = read_etan_field(run_dir)
+    start_dec_yr = 1992
     EtaN_slr_uncorrected_timeseries = calculate_EtaN_timeseries(EtaN_slr_uncorrected, area_grid, mask_grid, start_dec_yr)
 
-    model_2 = 'spinup'
-    run_dir = config_dir+'/run_'+model_2
-    XC, YC, EtaN_spinup, area_grid, mask_grid = read_etan_field(run_dir,spinup=True,n_proc=1)
-    start_dec_yr = 1972
-    EtaN_slr_spinup = calculate_EtaN_timeseries(EtaN_spinup, area_grid, mask_grid, start_dec_yr)
-
-    model_3 = 'slr_corrected'
-    run_dir = config_dir + '/run_' + model_3
-    XC, YC, EtaN_corrected_timeseries, area_grid, mask_grid = read_etan_field(run_dir, n_proc=1)
-    start_dec_yr = 1991 + (361 / 365.0)
+    model_2 = 'corrected'
+    run_dir = config_dir + '/run_' + model_2
+    XC, YC, EtaN_corrected_timeseries, area_grid, mask_grid = read_etan_field(run_dir)
+    start_dec_yr = 1992
     EtaN_slr_corrected_timeseries = calculate_EtaN_timeseries(EtaN_corrected_timeseries, area_grid, mask_grid, start_dec_yr)
 
-    start_dec_yr = 1991 + (361 / 365.0)
+    start_dec_yr = 1992
     observation_timeseries = read_observation_timeseries(config_dir,start_dec_yr)
 
-    plot_EtaN_timeseries(config_dir, observation_timeseries, EtaN_slr_uncorrected_timeseries,EtaN_slr_corrected_timeseries, EtaN_slr_spinup)
+    plot_EtaN_timeseries(config_dir, observation_timeseries, EtaN_slr_uncorrected_timeseries,EtaN_slr_corrected_timeseries)
 
 
 

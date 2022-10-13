@@ -6,7 +6,7 @@
 #
   slrc_obs_filename = 'slr_observations.bin',
   slrc_obs_period = 86400.,
-  slrc_obs_startdate_1 = 19911227,
+  slrc_obs_startdate_1 = 19920101,
   slrc_obs_startdate_2 = 000000,
 #
   slrc_output_filename = 'slrc_precip_scalars.bin',
