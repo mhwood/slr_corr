@@ -27,6 +27,6 @@ As for most MITgcm packages, there are both compile-time and run-time considerat
 #### Run-time Steps
 1. Add `useSlr_corr = .TRUE.` to the the data.pkg file.
 2. Provide a `data.slr_corr` file for run time.
-3. Provide a timeseries of mean sea level for for run time.
+3. Provide a timeseries of mean sea level for run time.
 
-See the verification experiments for a demo of these steps.
+See the [verification](https://github.com/mhwood/slr_corr/tree/main/verification) experiments for a demo of these steps.
