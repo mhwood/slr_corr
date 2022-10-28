@@ -298,8 +298,6 @@ C-    Precipitation.
 #endif
      I     myTime, myIter, myThid )
 
-      CALL SLR_CORR_ADJUST_PRECIP( myTime, myIter, myThid, precip)
-
 C-    Snow.
       CALL EXF_SET_FLD(
      I     'snowprecip', snowprecipfile, snowprecipmask,
@@ -787,6 +785,12 @@ cdm #endif
 #endif /* ALLOW_ROTATE_UV_CONTROLS */
 
       ENDIF !if (ctrlUseGen) then
+#endif
+
+#ifdef ALLOW_SLR_CORR
+      IF (useSlr_corr) THEN
+        CALL SLR_CORR_ADJUST_PRECIP( myTime, myIter, myThid, precip)
+      ENDIF
 #endif
 
       RETURN
