@@ -403,7 +403,7 @@ C----- pkgs with a standard "usePKG" On/Off switch in "data.pkg":
 #ifdef ALLOW_EMBED_FILES
       CALL PACKAGES_PRINT_MSG( useEMBED_FILES,'EMBED_FILES', ' ' )
 #endif
-#ifdef ALLOW_EMBED_FILES
+#ifdef ALLOW_SLR_CORR
       CALL PACKAGES_PRINT_MSG( useSlr_corr,'SLR_CORR', ' ' )
 #endif
 #ifdef ALLOW_MYPACKAGE
