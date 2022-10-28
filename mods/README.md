@@ -51,7 +51,7 @@ This file is inside the `model/src` directory. For this file, the `slr_corr` pac
 ```
 
 ## exf_getffields.F
-This file is inside the `pkg/exf` directory. For this file, a line has been added after the precip fields are read:
+This file is inside the `pkg/exf` directory. For this file, a few lines have been added near the end of exf_getffields.F:
 ```
 790 #ifdef ALLOW_SLR_CORR
 791       IF (useSlr_corr) THEN
@@ -59,4 +59,3 @@ This file is inside the `pkg/exf` directory. For this file, a line has been adde
 793       ENDIF
 794 #endif
 ```
-This line will most likely need to be moved further down in the script to accomodate additional ctrl adjustments.
