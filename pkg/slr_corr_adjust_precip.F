@@ -46,6 +46,7 @@ C     !LOCAL VARIABLES:
       INTEGER valid_pts
       INTEGER count0, count1
       INTEGER i, j, bi, bj, n
+      INTEGER kSrf
       _RL volume_above_zero_target
       _RL volume_above_zero
       _RL volume_above_zero_difference
@@ -149,6 +150,14 @@ C----&------------------------------------------------------------------xxxxxxx|
       evap_volume_flux = 0.0
       wet_area = 0.0
 
+      IF ( fluidIsAir ) THEN
+       kSrf = 0
+      ELSEIF ( usingPCoords ) THEN
+       kSrf = Nr
+      ELSE
+       kSrf = 1
+      ENDIF
+
 #ifndef ALLOW_USE_MPI
 C     Without MPI, we can just calculate these values with what we know
       DO bi=1,nSx
@@ -156,12 +165,12 @@ C     Without MPI, we can just calculate these values with what we know
       DO i=1,sNx
       DO j=1,sNy
             volume_above_zero = volume_above_zero
-     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             precip_volume_flux = precip_volume_flux
-     &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             evap_volume_flux = evap_volume_flux
-     &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
-            wet_area = wet_area + rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
+            wet_area = wet_area + rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
       ENDDO 
       ENDDO
       ENDDO
@@ -307,7 +316,7 @@ C      print *,'slrc_precip_adjustment',slrc_precip_adjustment
       DO i=1,sNx
       DO j=1,sNy
             precipArr(i,j,bi,bj) = precip(i,j,bi,bj)
-     &       + slrc_precip_adjustment * maskInC(i,j,bi,bj) 
+     &       + slrc_precip_adjustment * maskC(i,j,kSrf,bi,bj) 
       ENDDO 
       ENDDO
       ENDDO
@@ -382,6 +391,7 @@ C     !LOCAL VARIABLES:
       CHARACTER*(MAX_LEN_MBUF) msgBuf
       INTEGER, PARAMETER :: debug = 0
       INTEGER i, j, bi, bj
+      INTEGER kSrf
 
       _RL proc_volume_above_zero
       _RL proc_precip_volume_flux
@@ -419,6 +429,14 @@ C     \==================================================================/
      &                     SQUEEZE_RIGHT, myThid )
       endif
 
+      IF ( fluidIsAir ) THEN
+       kSrf = 0
+      ELSEIF ( usingPCoords ) THEN
+       kSrf = Nr
+      ELSE
+       kSrf = 1
+      ENDIF
+
       proc_volume_above_zero = 0.0
       proc_precip_volume_flux = 0.0
       proc_evap_volume_flux = 0.0
@@ -428,13 +446,13 @@ C     \==================================================================/
       DO i=1,sNx
       DO j=1,sNy
             proc_volume_above_zero = proc_volume_above_zero
-     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             proc_precip_volume_flux = proc_precip_volume_flux
-     &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             proc_evap_volume_flux = proc_evap_volume_flux
-     &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             proc_wet_area = proc_wet_area
-     &        + rA(i,j,bi,bj) * maskInC(i,j,bi,bj)
+     &        + rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
       ENDDO 
       ENDDO
       ENDDO
