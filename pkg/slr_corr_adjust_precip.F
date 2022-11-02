@@ -111,6 +111,7 @@ C     This is the target EtaN to adjust the precip toward
      &       /  (slrc_obs_period)
       mean_EtaN_target = (1-alpha) * slrc_obs_timeseries(count0) 
      &                   + alpha * slrc_obs_timeseries(count1)
+     &                  + slrc_obs_ref
 
 C      PRINT *, 'slrc_obs_timeseries',slrc_obs_timeseries
 C      PRINT *, 'myTime', myTime
