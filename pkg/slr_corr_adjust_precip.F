@@ -4,6 +4,7 @@ C----&------------------------------------------------------------------xxxxxxx|
 
 #include "SLR_CORR_OPTIONS.h"
 #include "EXF_OPTIONS.h"
+#include "ECCO_OPTIONS.h"
 
 C----&------------------------------------------------------------------xxxxxxx|
 C----&------------------------------------------------------------------xxxxxxx|
@@ -26,6 +27,8 @@ C     !USES:
 #include "GRID.h"
 #include "DYNVARS.h"
 #include "EXF_FIELDS.h"
+#include "ECCO_SIZE.h"
+#include "ECCO.h"
 
 #include "SLR_CORR_PARAM.h"
 #include "SLR_CORR_FIELDS.h"
@@ -165,7 +168,16 @@ C     Without MPI, we can just calculate these values with what we know
       DO i=1,sNx
       DO j=1,sNy
             volume_above_zero = volume_above_zero
-     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
+#ifdef ALLOW_ECCO
+#if (defined ATMOSPHERIC_LOADING && defined ALLOW_IB_CORR)
+     &       + m_eta_dyn(i,j,bi,bj)
+#else
+     &       + m_eta(i,j,bi,bj)
+#endif
+#else
+     &       + EtaN(i,j,bi,bj)
+#endif
+     &       * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             precip_volume_flux = precip_volume_flux
      &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             evap_volume_flux = evap_volume_flux
@@ -382,6 +394,8 @@ C     Sending surface fluxes from processes > 0 to master process 0
 #include "GRID.h"
 #include "DYNVARS.h"
 #include "EXF_FIELDS.h"
+#include "ECCO_SIZE.h"
+#include "ECCO.h"
 #include "SLR_CORR_PARAM.h"
 #include "SLR_CORR_FIELDS.h"
 
@@ -446,7 +460,16 @@ C     \==================================================================/
       DO i=1,sNx
       DO j=1,sNy
             proc_volume_above_zero = proc_volume_above_zero
-     &       + EtaN(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
+#ifdef ALLOW_ECCO
+#if (defined ATMOSPHERIC_LOADING && defined ALLOW_IB_CORR)
+     &       + m_eta_dyn(i,j,bi,bj)
+#else
+     &       + m_eta(i,j,bi,bj)
+#endif
+#else
+     &       + EtaN(i,j,bi,bj)
+#endif
+     &       * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             proc_precip_volume_flux = proc_precip_volume_flux
      &       + precip(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             proc_evap_volume_flux = proc_evap_volume_flux
