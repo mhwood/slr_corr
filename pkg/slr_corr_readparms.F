@@ -49,7 +49,8 @@ C----&------------------------------------------------------------------xxxxxxx|
      &     slrc_obs_startdate_1,
      &     slrc_obs_startdate_2,
      &     slrc_obs_period,
-     &     slrc_balancePeriod
+     &     slrc_balancePeriod, 
+     &     slrc_obs_ref
     
       if (debug .eq. 1) then
         WRITE(msgBuf,'(A)') "========================================="
@@ -80,6 +81,7 @@ C----&------------------------------------------------------------------xxxxxxx|
       slrc_obs_period = 0.
       slrc_balancePeriod = 0.
       slrc_obs_start_time = 0.
+      slrc_obs_ref = 0.
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Write out status to main output and fill in the parameters
@@ -138,6 +140,8 @@ C     Close the open data file
      &                     SQUEEZE_RIGHT, myThid )
       WRITE(msgBuf,'(A,F10.3)') "  slrc_obs_start_time: ",
      &                       slrc_obs_start_time
+      WRITE(msgBuf,'(A,E10.3)') "  slrc_obs_ref: ",
+     &                       slrc_obs_ref
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
       endif
