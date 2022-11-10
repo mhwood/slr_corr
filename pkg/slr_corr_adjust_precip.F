@@ -55,7 +55,7 @@ C     !LOCAL VARIABLES:
       _RL volume_above_zero_difference
       _RL precip_volume_flux
       _RL evap_volume_flux
-      _RL wet_area
+      _RL wet_area, corr_area
       _RL next_volume_above_zero
       _RL precip_adjustment
       _RL alpha
@@ -153,6 +153,7 @@ C----&------------------------------------------------------------------xxxxxxx|
       precip_volume_flux = 0.0
       evap_volume_flux = 0.0
       wet_area = 0.0
+      corr_area = 0.0
 
       IF ( fluidIsAir ) THEN
        kSrf = 0
@@ -184,6 +185,11 @@ C     Without MPI, we can just calculate these values with what we know
             evap_volume_flux = evap_volume_flux
      &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             wet_area = wet_area + rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+            IF(precip(i,j,bi,bj).GT.0. _d 0)THEN
+             corr_area = corr_area + rA(i,j,bi,bj)*maskC(i,j,kSrf,bi,bj)
+            ENDIF
+#endif
       ENDDO 
       ENDDO
       ENDDO
@@ -205,6 +211,7 @@ C      PRINT *,'procs_wet_area',procs_wet_area
             evap_volume_flux = evap_volume_flux
      &       + procs_evap_volume_flux(i)
             wet_area = wet_area + procs_wet_area(i)
+            corr_area = corr_area + procs_corr_area(i)
       ENDDO
 #endif
 
@@ -229,6 +236,10 @@ C      PRINT *,'procs_wet_area',procs_wet_area
      &                     SQUEEZE_RIGHT, myThid )
       WRITE(msgBuf,'(A,F20.3,A)') "  wet_area", 
      &                          wet_area, " m^3"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  corr_area",
+     &                          corr_area, " m^2"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
       endif
@@ -287,7 +298,13 @@ C     & - precip_volume_flux + evap_volume_flux
       endif
 
 C     Convert precip adjustment to a mean per area cell
+C     Total area (denominator) is wet_area by default and corr_area if 
+C     MODIDY_POSITIVE_PRECIP_ONLY is defined in EXF_OPTIONS.h
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+      precip_adjustment = precip_adjustment/corr_area
+#else
       precip_adjustment = precip_adjustment/wet_area
+#endif
 
 #ifndef ALLOW_USE_MPI
       slrc_precip_adjustment = precip_adjustment
@@ -412,11 +429,13 @@ C     !LOCAL VARIABLES:
       _RL proc_precip_volume_flux
       _RL proc_evap_volume_flux
       _RL proc_wet_area
+      _RL proc_corr_area
 
       _RL vol_tmp
       _RL precip_tmp
       _RL evap_tmp
       _RL area_tmp
+      _RL corr_area_tmp
 CEOP
 C----&------------------------------------------------------------------xxxxxxx|
 CBOC 
@@ -456,6 +475,7 @@ C     \==================================================================/
       proc_precip_volume_flux = 0.0
       proc_evap_volume_flux = 0.0
       proc_wet_area = 0.0
+      proc_corr_area = 0.0
       DO bi=1,nSx
       DO bj=1,nSy
       DO i=1,sNx
@@ -477,6 +497,12 @@ C     \==================================================================/
      &       + evap(i,j,bi,bj) * rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
             proc_wet_area = proc_wet_area
      &        + rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+            IF(precip(i,j,bi,bj).GT.0. _d 0)THEN
+             proc_corr_area = proc_corr_area
+     &         + rA(i,j,bi,bj) * maskC(i,j,kSrf,bi,bj)
+            ENDIF
+#endif
       ENDDO 
       ENDDO
       ENDDO
@@ -486,6 +512,7 @@ C     \==================================================================/
       procs_precip_volume_flux(mpiMyId+1) = proc_precip_volume_flux
       procs_evap_volume_flux(mpiMyId+1) = proc_evap_volume_flux
       procs_wet_area(mpiMyId+1) = proc_wet_area
+      procs_corr_area(mpiMyId+1) = proc_corr_area
 
 
 C ---- Here all procs besides 0 send their volume sums to
@@ -494,6 +521,7 @@ C      1. volume above 0 (calculated from EtaN)
 C      2. precip volume flux
 C      3. eval volume flux
 C      4. wet_area
+C      5. corr_area
       
 
         IF (mpiMyId .gt. 0) then
@@ -517,6 +545,8 @@ C      PRINT *,'proc_wet_area',proc_wet_area
      &             1, MPI_DOUBLE, 0, 3, MPI_COMM_MODEL, ierror)
           call MPI_SEND(proc_wet_area,
      &             1, MPI_DOUBLE, 0, 4, MPI_COMM_MODEL, ierror)
+          call MPI_SEND(proc_corr_area,
+     &             1, MPI_DOUBLE, 0, 5, MPI_COMM_MODEL, ierror)
         ENDIF
 
 C ---- Here proc 0 receives the volume sums in this order:
@@ -524,6 +554,7 @@ C      1. volume above 0 (calculated from EtaN)
 C      2. precip volume flux
 C      3. eval volume flux
 C      4. wet_area
+C      5. corr_area
 
         IF (mpiMyId .eq. 0) then
           if (debug .eq. 1) then
@@ -542,6 +573,8 @@ C      4. wet_area
      &               pid, 3 ,MPI_COMM_MODEL, status, ierror)
               call MPI_RECV(area_tmp, 1, MPI_DOUBLE,
      &               pid, 4 ,MPI_COMM_MODEL, status, ierror)
+              call MPI_RECV(corr_area_tmp, 1, MPI_DOUBLE,
+     &               pid, 5 ,MPI_COMM_MODEL, status, ierror)
 
 C            PRINT *, 'pid',pid
 C            PRINT *,  'vol_tmp', vol_tmp
@@ -553,6 +586,7 @@ C            PRINT *,  'area_tmp', area_tmp
       procs_precip_volume_flux(pid+1) = precip_tmp
       procs_evap_volume_flux(pid+1) = evap_tmp
       procs_wet_area(pid+1) = area_tmp
+      procs_corr_area(pid+1) = corr_area_tmp
 
           ENDDO
          ENDIF
