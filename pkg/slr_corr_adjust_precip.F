@@ -298,7 +298,7 @@ C     & - precip_volume_flux + evap_volume_flux
       endif
 
 C     Convert precip adjustment to a mean per area cell
-C     Total area (denominator) is wet_area by default and corr_area if 
+C     Total area (denominator) is wet_area by default and corr_area if
 C     MODIDY_POSITIVE_PRECIP_ONLY is defined in EXF_OPTIONS.h
 #ifdef MODIDY_POSITIVE_PRECIP_ONLY
       precip_adjustment = precip_adjustment/corr_area
