@@ -45,7 +45,7 @@ C     !LOCAL VARIABLES:
       INTEGER, PARAMETER :: debug = 1
       INTEGER n_average_points
       _RL max_obs_time
-      _RL mean_EtaN_target
+      _RL mean_SSH_target
       INTEGER valid_pts
       INTEGER count0, count1
       INTEGER i, j, bi, bj, n
@@ -86,7 +86,7 @@ C----&------------------------------------------------------------------xxxxxxx|
       _BEGIN_MASTER(myThid)
 
 C----&------------------------------------------------------------------xxxxxxx|
-C   Calculate the mean EtaN target from provided observations
+C   Calculate the mean SSH target from provided observations
 C----&------------------------------------------------------------------xxxxxxx|
 
 C     First get the lower and upper bound steps in the obs
@@ -104,12 +104,12 @@ C     timeseries
       ENDDO
       count1 = count0 +1
 
-C     Now, interpolate to get the target EtaN
-C     This is the target EtaN to adjust the precip toward
+C     Now, interpolate to get the target SSH
+C     This is the target SSH to adjust the precip toward
       alpha = (myTime+deltaT
      &       -(slrc_obs_start_time+(count0-1)*slrc_obs_period))
      &       /  (slrc_obs_period)
-      mean_EtaN_target = (1-alpha) * slrc_obs_timeseries(count0) 
+      mean_SSH_target = (1-alpha) * slrc_obs_timeseries(count0) 
      &                   + alpha * slrc_obs_timeseries(count1)
      &                  + slrc_obs_ref
 
@@ -120,9 +120,9 @@ C      PRINT *, 'uTime',slrc_obs_start_time+(count1-1)*slrc_obs_period
 C      PRINT *, 'count0',count0
 C      PRINT *, 'count1',count1
 C      PRINT *, 'alpha', alpha
-C      PRINT *, 'lEtaN',slrc_obs_timeseries(count0)
-C      PRINT *, 'uEtaN',slrc_obs_timeseries(count1)
-C      PRINT *, 'mean_EtaN_target',mean_EtaN_target
+C      PRINT *, 'lSSH',slrc_obs_timeseries(count0)
+C      PRINT *, 'uSSH',slrc_obs_timeseries(count1)
+C      PRINT *, 'mean_SSH_target',mean_SSH_target
 
       if (debug .eq. 1) then
       WRITE(msgBuf,'(A,I10)') "  myIter ", myIter
@@ -140,7 +140,7 @@ C      PRINT *, 'mean_EtaN_target',mean_EtaN_target
       WRITE(msgBuf,'(A,F20.3)') "  alpha ", alpha
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
-      WRITE(msgBuf,'(A,F20.3)') "  mean_EtaN_target ", mean_EtaN_target
+      WRITE(msgBuf,'(A,F20.3)') "  mean_SSH_target ", mean_SSH_target
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
       endif
@@ -190,6 +190,7 @@ C     Without MPI, we can just calculate these values with what we know
              corr_area = corr_area + rA(i,j,bi,bj)*maskC(i,j,kSrf,bi,bj)
             ENDIF
 #endif
+
       ENDDO 
       ENDDO
       ENDDO
@@ -215,7 +216,7 @@ C      PRINT *,'procs_wet_area',procs_wet_area
       ENDDO
 #endif
 
-      volume_above_zero_target = mean_EtaN_target*wet_area
+      volume_above_zero_target = mean_SSH_target*wet_area
 
       if (debug .eq. 1) then
       WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero", 
@@ -235,7 +236,7 @@ C      PRINT *,'procs_wet_area',procs_wet_area
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
       WRITE(msgBuf,'(A,F20.3,A)') "  wet_area", 
-     &                          wet_area, " m^3"
+     &                          wet_area, " m^2"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
       WRITE(msgBuf,'(A,F20.3,A)') "  corr_area",
@@ -291,7 +292,7 @@ C     Calculate the precip adjustment (m3/s)
 C     & - precip_volume_flux + evap_volume_flux
 
       if (debug .eq. 1) then
-      WRITE(msgBuf,'(A,F20.3,A)') "  precip_adjustment", 
+      WRITE(msgBuf,'(A,E20.3,A)') "  precip_adjustment", 
      &                          precip_adjustment, " m^3/s"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
@@ -319,7 +320,7 @@ C     the other additions
 #endif
 
       if (debug .eq. 1) then
-      WRITE(msgBuf,'(A,F20.3,A)') "  precip_adjustment", 
+      WRITE(msgBuf,'(A,E20.3,A)') "  precip_adjustment", 
      &                          precip_adjustment, " m/s"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
@@ -517,7 +518,7 @@ C     \==================================================================/
 
 C ---- Here all procs besides 0 send their volume sums to
 C      proc 0 in this order:
-C      1. volume above 0 (calculated from EtaN)
+C      1. volume above 0 (calculated from SSH)
 C      2. precip volume flux
 C      3. eval volume flux
 C      4. wet_area
@@ -550,7 +551,7 @@ C      PRINT *,'proc_wet_area',proc_wet_area
         ENDIF
 
 C ---- Here proc 0 receives the volume sums in this order:
-C      1. volume above 0 (calculated from EtaN)
+C      1. volume above 0 (calculated from SSH)
 C      2. precip volume flux
 C      3. eval volume flux
 C      4. wet_area
