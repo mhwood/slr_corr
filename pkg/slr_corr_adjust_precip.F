@@ -56,6 +56,10 @@ C     !LOCAL VARIABLES:
       _RL precip_volume_flux
       _RL evap_volume_flux
       _RL wet_area, corr_area
+#ifdef SCALE_PRECIP_TO_ADJUST
+      _RL precip_volume_flux_pos
+      _RL precip_adjustment_fac
+#endif
       _RL next_volume_above_zero
       _RL precip_adjustment
       _RL alpha
@@ -154,6 +158,9 @@ C----&------------------------------------------------------------------xxxxxxx|
       evap_volume_flux = 0.0
       wet_area = 0.0
       corr_area = 0.0
+#ifdef SCALE_PRECIP_TO_ADJUST
+      precip_volume_flux_pos = 0.0
+#endif
 
       IF ( fluidIsAir ) THEN
        kSrf = 0
@@ -188,6 +195,14 @@ C----&------------------------------------------------------------------xxxxxxx|
              corr_area = corr_area + rA(i,j,bi,bj)*maskC(i,j,kSrf,bi,bj)
             ENDIF
 #endif
+#ifdef SCALE_PRECIP_TO_ADJUST
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+            IF(precip(i,j,bi,bj).GT.0. _d 0)THEN
+             precip_volume_flux_pos = precip_volume_flux_pos
+     &        + precip(i,j,bi,bj) * rA(i,j,bi,bj)*maskC(i,j,kSrf,bi,bj)
+            ENDIF
+#endif
+#endif
 
       ENDDO 
       ENDDO
@@ -199,27 +214,40 @@ C----&------------------------------------------------------------------xxxxxxx|
       _GLOBAL_SUM_RL( evap_volume_flux, mythid )
       _GLOBAL_SUM_RL( wet_area, mythid )
       _GLOBAL_SUM_RL( corr_area, mythid )
+#ifdef SCALE_PRECIP_TO_ADJUST
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+      _GLOBAL_SUM_RL( precip_volume_flux_pos, mythid )
+#endif
+#endif
 
       volume_above_zero_target = mean_SSH_target*wet_area
 
       if (debug .eq. 1) then
-      WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero", 
+      WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero",
      &                          volume_above_zero, " m^3"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
-      WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero_target", 
+      WRITE(msgBuf,'(A,F20.3,A)') "  volume_above_zero_target",
      &                          volume_above_zero_target, " m^3"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
-      WRITE(msgBuf,'(A,F20.3,A)') "  precip_volume_flux", 
+      WRITE(msgBuf,'(A,F20.3,A)') "  precip_volume_flux",
      &                          precip_volume_flux, " m^3/s"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
-      WRITE(msgBuf,'(A,F20.3,A)') "  evap_volume_flux", 
+#ifdef SCALE_PRECIP_TO_ADJUST
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+      WRITE(msgBuf,'(A,F20.3,A)') "  precip_volume_flux_pos",
+     &                          precip_volume_flux_pos, " m^3/s"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+#endif
+#endif
+      WRITE(msgBuf,'(A,F20.3,A)') "  evap_volume_flux",
      &                          evap_volume_flux, " m^3/s"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
-      WRITE(msgBuf,'(A,F20.3,A)') "  wet_area", 
+      WRITE(msgBuf,'(A,F20.3,A)') "  wet_area",
      &                          wet_area, " m^2"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
@@ -285,13 +313,25 @@ C     & - precip_volume_flux + evap_volume_flux
 C     Convert precip adjustment to a mean per area cell
 C     Total area (denominator) is wet_area by default and corr_area if
 C     MODIDY_POSITIVE_PRECIP_ONLY is defined in EXF_OPTIONS.h
+#ifdef SCALE_PRECIP_TO_ADJUST
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+      precip_adjustment_fac = precip_adjustment/precip_volume_flux_pos
+#else
+      precip_adjustment_fac = precip_adjustment/precip_volume_flux
+#endif
+#else
 #ifdef MODIDY_POSITIVE_PRECIP_ONLY
       precip_adjustment = precip_adjustment/corr_area
 #else
       precip_adjustment = precip_adjustment/wet_area
 #endif
+#endif
 
+#ifdef SCALE_PRECIP_TO_ADJUST
+      slrc_precip_adjustment_fac = precip_adjustment_fac
+#else
       slrc_precip_adjustment = precip_adjustment
+#endif
 
       if (debug .eq. 1) then
       WRITE(msgBuf,'(A,E20.3,A)') "  precip_adjustment", 
@@ -302,6 +342,16 @@ C     MODIDY_POSITIVE_PRECIP_ONLY is defined in EXF_OPTIONS.h
      &                          deltaT, " s"
       CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
      &                     SQUEEZE_RIGHT, myThid )
+#ifdef SCALE_PRECIP_TO_ADJUST
+      WRITE(msgBuf,'(A,F20.3,A)') "  precip_adjustment_fac",
+     &                          precip_adjustment_fac, " nondim"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+      WRITE(msgBuf,'(A,F20.3,A)') "  slrc_precip_adjustment_fac",
+     &                          slrc_precip_adjustment_fac, " nondim"
+      CALL PRINT_MESSAGE( msgBuf, standardMessageUnit,
+     &                     SQUEEZE_RIGHT, myThid )
+#endif
       endif
 
 C----&------------------------------------------------------------------xxxxxxx|
@@ -314,13 +364,30 @@ C      print *,'slrc_precip_adjustment',slrc_precip_adjustment
       DO bj=1,nSy
       DO i=1,sNx
       DO j=1,sNy
+#ifdef SCALE_PRECIP_TO_ADJUST
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+           IF(precip(i,j,bi,bj).GT.0. _d 0)THEN
+#endif
+            precipArr(i,j,bi,bj) = precip(i,j,bi,bj)
+     &       + (slrc_precip_adjustment_fac-1. _d 0) * precip(i,j,bi,bj) 
+     &       * maskC(i,j,kSrf,bi,bj) 
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+           ENDIF
+#endif
+#else
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+           IF(precip(i,j,bi,bj).GT.0. _d 0)THEN
+#endif
             precipArr(i,j,bi,bj) = precip(i,j,bi,bj)
      &       + slrc_precip_adjustment * maskC(i,j,kSrf,bi,bj) 
+#ifdef MODIDY_POSITIVE_PRECIP_ONLY
+           ENDIF
+#endif
+#endif
       ENDDO 
       ENDDO
       ENDDO
       ENDDO
-
 
 C----&------------------------------------------------------------------xxxxxxx|
 C     Wrap up the code

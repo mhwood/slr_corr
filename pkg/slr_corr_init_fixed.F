@@ -102,7 +102,8 @@ C----&------------------------------------------------------------------xxxxxxx|
       STOP 'ABNORMAL END: S/R READ_GLVEC_RL needs MDSIO pkg'
 #endif
 
-      slrc_precip_adjustment = 0.0
+      slrc_precip_adjustment = 0. _d 0
+      slrc_precip_adjustment_fac = 1. _d 0
 
 C----&------------------------------------------------------------------xxxxxxx|
 C   Fill in the arrays with zeros to avoid issues
