@@ -108,10 +108,6 @@ C----&------------------------------------------------------------------xxxxxxx|
 C   Fill in the arrays with zeros to avoid issues
 C----&------------------------------------------------------------------xxxxxxx|
 
-      DO i=1,nPx*nPy
-      procs_volume_above_zero(i) = 0
-      ENDDO
-
       DO n=1,slrc_est_order+1
       volumes_above_zero(n) = 0
       ENDDO

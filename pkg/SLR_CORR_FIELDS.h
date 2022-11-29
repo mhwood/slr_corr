@@ -30,19 +30,4 @@ C------------------------------------------------------------------------------|
       _RL slrc_obs_timeseries(slrc_n_obs)
       _RL slr_average_etans(slrc_max_average_recs)
       _RL volumes_above_zero(slrc_est_order+1)
-
-
-#ifdef ALLOW_USE_MPI
-      COMMON /SLR_CORR_MPI_FIELDS/
-     & procs_volume_above_zero,
-     & procs_precip_volume_flux,
-     & procs_evap_volume_flux,
-     & procs_wet_area
-      _RL procs_volume_above_zero(nPx*nPy)
-      _RL procs_precip_volume_flux(nPx*nPy)
-      _RL procs_evap_volume_flux(nPx*nPy)
-      _RL procs_wet_area(nPx*nPy)
-#endif
-
-
 #endif /* ALLOW_SLR_CORR */
