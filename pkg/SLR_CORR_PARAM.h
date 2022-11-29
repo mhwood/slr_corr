@@ -35,6 +35,9 @@ C     This is the time interval over which the running average is computed
 C     This is the precip adjustment, updated at each time step
       _RL slrc_precip_adjustment
 
+C     This is the scaling factor to adjust precip, updated at each time step
+      _RL slrc_precip_adjustment_fac
+
 C     This is the reference to be added to obs to account for bias btw obs and md 
       _RL slrc_obs_ref
 
@@ -65,4 +68,6 @@ C------------------------------------------------------------------------------|
      & slrc_precip_adjustment,
      & slrc_obs_ref
 
+      COMMON /SLR_CORR_PARAM_R2/
+     & slrc_precip_adjustment_fac
 #endif /* ALLOW_SLR_CORR */
