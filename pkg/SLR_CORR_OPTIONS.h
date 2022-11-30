@@ -15,9 +15,9 @@ CC When adjusting GMSL, only adjust precipitation
 CC where precipitation is positive
 C#define MODIDY_POSITIVE_PRECIP_ONLY
  
-CC Instead of using a spatially-invariant precipitation
-CC adjustment, apply a scaling factor to precipitation
-C#define SCALE_PRECIP_TO_ADJUST
+C Instead of using a spatially-invariant precipitation
+C adjustment, apply a scaling factor to precipitation
+#define SCALE_PRECIP_TO_ADJUST
 
 #endif /* ALLOW_SLR_CORR */
 #endif /* ALLOW_SLR_OPTIONS_H */
