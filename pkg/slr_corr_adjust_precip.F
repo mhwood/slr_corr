@@ -4,7 +4,9 @@ C----&------------------------------------------------------------------xxxxxxx|
 
 #include "SLR_CORR_OPTIONS.h"
 #include "EXF_OPTIONS.h"
+#ifdef ALLOW_ECCO
 #include "ECCO_OPTIONS.h"
+#endif
 
 C----&------------------------------------------------------------------xxxxxxx|
 C----&------------------------------------------------------------------xxxxxxx|
@@ -27,8 +29,10 @@ C     !USES:
 #include "GRID.h"
 #include "DYNVARS.h"
 #include "EXF_FIELDS.h"
+#ifdef ALLOW_ECCO
 #include "ECCO_SIZE.h"
 #include "ECCO.h"
+#endif
 
 #include "SLR_CORR_PARAM.h"
 #include "SLR_CORR_FIELDS.h"
